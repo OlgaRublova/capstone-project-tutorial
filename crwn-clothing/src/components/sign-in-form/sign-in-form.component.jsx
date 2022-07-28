@@ -1,60 +1,74 @@
-import React, {useState} from 'react';
-import "./sign-up-form.styles.scss"
+import React, {useContext, useState} from 'react';
+
 import {
-    createAuthUserWithEmailAndPassword,
-    createUserDocumentFromAuth
-} from "../../utils/firebase/firebase.utils";
+    signInWithGooglePopup,
+    createUserDocumentFromAuth,
+    signInAuthUserWithEmailAndPassword,
+} from '../../utils/firebase/firebase.utils';
+
+
 import FormInputComponent from "../form-input/form-input.component";
 import ButtonComponent from "../button/button.component";
 
+import "./sign-in-form.styles.scss"
+import {UserContext} from "../../contexts/user.context";
+
 const defaultFormFields = {
-    displayName: "",
     email: "",
     password: "",
-    confirmPassword: ""
 }
 
-const SignUpFormComponent = () => {
+const SignInFormComponent = () => {
     const [formFields, setFormFields] = useState(defaultFormFields);
-    const {displayName, email, password, confirmPassword} = formFields;
+    const {email, password} = formFields;
+
+    const { setCurrentUser } = useContext(UserContext);
+
+
+    const resetFormFields = () => {
+        setFormFields(defaultFormFields)
+    }
+
+    const signInWithGoogle = async () => {
+        const {user} = await signInWithGooglePopup();
+        await createUserDocumentFromAuth(user);
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+        const { user } =  await signInAuthUserWithEmailAndPassword(email, password);
+            setCurrentUser(user)
+            resetFormFields();
+        } catch (err) {
+            switch (err.code) {
+                case "auth/wrong-password":
+                    console.log("Incorrect password   for email");
+                    break;
+                case "auth/user-not-found":
+                    console.log("No user found");
+                    break;
+                default:
+                    console.log(err)
+            }
+        }
+    }
 
     const handleChange = event => {
         const {name, value} = event.target;
         setFormFields({...formFields, [name]: value})
     }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (password !== confirmPassword) {
-            console.log("Passwords don't match")
-            return;
-        }
 
-        try {
-            const {user} = await createAuthUserWithEmailAndPassword(email, password);
-            await createUserDocumentFromAuth(user, {displayName})
-            resetFormFields();
 
-        } catch (err) {
-            if (err.code === "auth/email-already-in-use") {
-                console.log("Email is already in use.")
-            }
-            console.log(err.message)
-        }
-    }
-
-    const resetFormFields = () => {
-        setFormFields(defaultFormFields)
-    }
 
     return (
         <div className="sign-up-container">
-            <h2>Don't have an account</h2>
-            <span>Sign Up with your email & password</span>
+            <h2>Already have an account</h2>
+            <span>Sign in with your email & password</span>
             <form onSubmit={handleSubmit}>
-                <FormInputComponent
-                    label="Display Name"
-                    type="text" name="displayName" value={displayName} required onChange={handleChange}/>
+
                 <FormInputComponent
                     label="Email"
                     type="email" name="email" value={email} required onChange={handleChange}/>
@@ -63,14 +77,19 @@ const SignUpFormComponent = () => {
                     label="Password"
                     type="password" name="password" value={password} required onChange={handleChange}/>
 
-                <FormInputComponent
-                    label="Confirm Password"
-                    type="password" name="confirmPassword" value={confirmPassword} required onChange={handleChange}/>
-                <ButtonComponent buttonType="google" type="submit">Sign Up With Google</ButtonComponent>
+                <div className="buttons-container">
+                    <ButtonComponent type="submit">Sign In</ButtonComponent>
+                    <ButtonComponent
+                        type="button"
+                        buttonType="google"
+                        onClick={signInWithGoogle}
+                    >Sign In With Google</ButtonComponent>
+                </div>
+
             </form>
         </div>
     );
 };
 
 
-export default SignUpFormComponent;
+export default SignInFormComponent;

@@ -11,7 +11,6 @@ import FormInputComponent from "../form-input/form-input.component";
 import ButtonComponent from "../button/button.component";
 
 import "./sign-in-form.styles.scss"
-import {UserContext} from "../../contexts/user.context";
 
 const defaultFormFields = {
     email: "",
@@ -22,7 +21,6 @@ const SignInFormComponent = () => {
     const [formFields, setFormFields] = useState(defaultFormFields);
     const {email, password} = formFields;
 
-    const { setCurrentUser } = useContext(UserContext);
 
 
     const resetFormFields = () => {
@@ -30,30 +28,20 @@ const SignInFormComponent = () => {
     }
 
     const signInWithGoogle = async () => {
-        const {user} = await signInWithGooglePopup();
-        await createUserDocumentFromAuth(user);
+        await signInWithGooglePopup();
+
     }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
 
         try {
-        const { user } =  await signInAuthUserWithEmailAndPassword(email, password);
-            setCurrentUser(user)
+            await signInAuthUserWithEmailAndPassword(email, password);
             resetFormFields();
-        } catch (err) {
-            switch (err.code) {
-                case "auth/wrong-password":
-                    console.log("Incorrect password   for email");
-                    break;
-                case "auth/user-not-found":
-                    console.log("No user found");
-                    break;
-                default:
-                    console.log(err)
-            }
+        } catch (error) {
+            console.log('user sign in failed', error);
         }
-    }
+    };
 
     const handleChange = event => {
         const {name, value} = event.target;

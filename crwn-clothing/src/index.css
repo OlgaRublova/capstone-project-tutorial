@@ -15,3 +15,8 @@ nav{
     flex-direction: column;
     margin-bottom: 3rem;
 }
+
+body{
+    margin: 0;
+    padding: 20px 40px;
+}
